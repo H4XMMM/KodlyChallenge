@@ -102,4 +102,35 @@ class AccountsControllerTest {
       .andExpect(
         content().string("{\"accountId\":\"" + uniqueAccountId + "\",\"balance\":123.45}"));
   }
+
+  @Test
+  void transferFunds() throws Exception {
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"1\",\"balance\":1000}")).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"2\",\"balance\":200}")).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountIdFrom\":\"1\",\"accountIdTo\":\"2\",\"amount\":300}")).andExpect(status().isOk());
+
+    Account accountTo = accountsService.getAccount("1");
+    Account accountFrom = accountsService.getAccount("2");
+    assertThat(accountTo.getBalance()).isEqualByComparingTo("700");
+    assertThat(accountFrom.getBalance()).isEqualByComparingTo("500");
+  }
+
+  @Test
+  void transferFundsAccountNotFoundException() throws Exception {
+    this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountIdFrom\":\"DoesNotExist\",\"accountIdTo\":\"2\",\"amount\":300}")).andExpect(status().isNotFound());
+  }
+
+  @Test
+  void transferFundsInsufficientBalanceException() throws Exception {
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"4\",\"balance\":20}")).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"5\",\"balance\":10}")).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountIdFrom\":\"4\",\"accountIdTo\":\"5\",\"amount\":300}")).andExpect(status().isBadRequest());
+  }
 }

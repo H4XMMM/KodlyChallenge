@@ -1,7 +1,10 @@
 package com.dws.challenge.web;
 
 import com.dws.challenge.domain.Account;
+import com.dws.challenge.domain.TransferDTO;
+import com.dws.challenge.exception.AccountNotFoundException;
 import com.dws.challenge.exception.DuplicateAccountIdException;
+import com.dws.challenge.exception.InsufficientFundsException;
 import com.dws.challenge.service.AccountsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/v1/accounts")
@@ -34,7 +40,7 @@ public class AccountsController {
     log.info("Creating account {}", account);
 
     try {
-    this.accountsService.createAccount(account);
+      this.accountsService.createAccount(account);
     } catch (DuplicateAccountIdException daie) {
       return new ResponseEntity<>(daie.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -48,4 +54,22 @@ public class AccountsController {
     return this.accountsService.getAccount(accountId);
   }
 
+
+  @PostMapping(path = "/transfer",
+               consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Object> transferFunds(@RequestBody TransferDTO transferDTO) {
+
+    log.info("Transferring {} funds from account with id {} to account with id {}",
+             transferDTO.getAmount(), transferDTO.getAccountIdFrom(), transferDTO.getAccountIdTo());
+
+    try {
+      this.accountsService.transferFunds(transferDTO.getAmount(), transferDTO.getAccountIdFrom(), transferDTO.getAccountIdTo());
+    } catch (InsufficientFundsException ife) {
+      return new ResponseEntity<>(ife.getMessage(), HttpStatus.BAD_REQUEST);
+    } catch (AccountNotFoundException anfe) {
+      return new ResponseEntity<>(anfe.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    return new ResponseEntity<>(HttpStatus.OK);
+  }
 }
