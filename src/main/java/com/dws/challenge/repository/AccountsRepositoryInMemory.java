@@ -4,10 +4,7 @@ import com.dws.challenge.domain.Account;
 import com.dws.challenge.exception.AccountNotFoundException;
 import com.dws.challenge.exception.DuplicateAccountIdException;
 import com.dws.challenge.exception.InsufficientFundsException;
-import com.dws.challenge.service.AccountsService;
-import com.dws.challenge.service.EmailNotificationService;
 import com.dws.challenge.service.NotificationService;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
